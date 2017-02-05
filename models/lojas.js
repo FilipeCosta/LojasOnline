@@ -1,7 +1,5 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-var jwt = require('jsonwebtoken');
-var crypto = require('crypto');
 
 var lojasSchema = new mongoose.Schema({
   email: {
@@ -9,35 +7,32 @@ var lojasSchema = new mongoose.Schema({
     unique: true,
     required: true
   },
-  name: {
+  nome: {
     type: String,
-    required: true
+    required: true,
+    unique: true
   },
-  hash: String,
-  salt: String
+  descricao: {
+    type: String,
+    default: "No description for this store"
+  },
+  telefone:{
+    type:String,
+  },
+  password:
+  {
+    type: String, required: true
+  }
+  ,
+  img: {
+    data: Buffer, contentType: String
+  },
+  imgNome: {
+    type: String
+  },
+  produtos: [
+    { type: mongoose.Schema.ObjectId, ref: 'Produto' }
+  ],
 });
 
-lojasSchema.methods.generateJwt = function() {
-  var expiry = new Date();
-  expiry.setDate(expiry.getDate() + 7);
-
-  return jwt.sign({
-    _id: this._id,
-    email: this.email,
-    name: this.name,
-    exp: parseInt(expiry.getTime() / 1000),
-  }, "12345"); // DO NOT KEEP YOUR SECRET IN THE CODE!
-};
-
-lojasSchema.methods.setPassword = function(password){
-  this.salt = crypto.randomBytes(16).toString('hex');
-  this.hash = crypto.pbkdf2Sync(password, this.salt, 1000, 64).toString('hex');
-};
-
-lojasSchema.methods.validPassword = function(password) {
-  var hash = crypto.pbkdf2Sync(password, this.salt, 1000, 64).toString('hex');
-  return this.hash === hash;
-};
-
-
-module.exports = mongoose.model('Loja',lojasSchema);
+module.exports = mongoose.model('Loja', lojasSchema);
