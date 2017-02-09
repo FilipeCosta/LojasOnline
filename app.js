@@ -13,6 +13,9 @@ var connectionString = 'mongodb://localhost:27017' + dbName;
 mongoose.Promise = global.Promise;
 mongoose.connect(connectionString);
 
+// Host most stuff in the public folder
+app.use(express.static(__dirname + '/'));
+
 app.use(cookieParser());
 app.use(session({
   secret: 'keyboard cat',
@@ -24,8 +27,6 @@ app.use(session({
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
-
-app.use(multer({dest:'./upload'}).single('photo'));
 
 app.use(function(req,res,next){
     res.header('Access-Control-Allow-Origin', '*');

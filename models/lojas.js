@@ -16,23 +16,21 @@ var lojasSchema = new mongoose.Schema({
     type: String,
     default: "No description for this store"
   },
-  telefone:{
-    type:String,
+  telefone: {
+    type: String,
   },
   password:
   {
     type: String, required: true
   }
   ,
-  img: {
-    data: Buffer, contentType: String
-  },
-  imgNome: {
-    type: String
-  },
+  foto: { name: String, img: String, contentType: String },
+
   produtos: [
     { type: mongoose.Schema.ObjectId, ref: 'Produto' }
   ],
 });
+
+
 
 module.exports = mongoose.model('Loja', lojasSchema);

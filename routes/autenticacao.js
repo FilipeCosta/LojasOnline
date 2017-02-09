@@ -4,10 +4,19 @@ var Loja = require('../models/lojas');
 var Produto = require('../models/produtos');
 var fs = require('fs');
 var multer = require('multer');
-var session = require('express-session')
+var upload = multer({dest:'./public/upload'});
+var session = require('express-session');
+var multipart = require('connect-multiparty');
+var multipartMiddleware = multipart();
 
 
-router.post('/registo', function (req, res) {
+
+
+
+
+router.post('/registo',upload.single('file'), function (req, res) {
+
+
   if (JSON.stringify(req.body) == "{}") {
     return res.status(400).json({ Error: "empty request body" });
   }
@@ -20,6 +29,7 @@ router.post('/registo', function (req, res) {
   if (!req.body.nome) {
     return res.status(400).json({ Error: "you need to specify the name" });
   }
+  
 
   /*Loja.find({nome: req.body.nome},function(err,loja){
     if(err){
@@ -39,7 +49,23 @@ router.post('/registo', function (req, res) {
     }
   });*/
 
-  var loja = new Loja(req.body);
+
+  // saving image
+  var pic = {
+    name: req.file.name,
+    img:  req.file.path,
+    contentType: req.file.type
+  };
+
+  console.log(pic);
+
+  var loja = new Loja({
+    nome: req.body.nome,
+    email: req.body.email,
+    password: req.body.password,
+    foto: pic
+  });
+
   loja.save(function (err) {
     if (err) {
       return res.status(500);
@@ -64,7 +90,7 @@ router.post('/login', function (req, res) {
 
   Loja.findOne({ email: req.body.email }, function (err, loja) {
     if (!loja) {
-      return res.status(404).json({ message: "login invalido" });
+      return res.status(404).json({ message: "login invalido verifique as suas credenciais" });
     }
     if (loja.password != req.body.password) {
       return res.status(400).json({ message: "password invalida" });
@@ -86,9 +112,30 @@ router.get('/confirm-login',function(req,res){
   }
 });
 
+router.post('/upload', multipartMiddleware, function (req, res) {
+  console.log("sadasdsa");
+  flow.post(req, function (status, filename, original_filename, identifier) {
+    console.log('POST', status, original_filename, identifier);
+
+    res.send(200, {
+      // NOTE: Uncomment this funciton to enable cross-domain request.
+      //'Access-Control-Allow-Origin': '*'
+    });
+  });
+});
+
+
+router.get('/upload', function(req, res){
+  flow.get(req, function(status, filename, original_filename, identifier){
+    console.log('GET', status);
+    res.send(200, (status == 'found' ? 200 : 404));
+  });
+});
+
 router.get('/profile', function (req, res) {
 
 });
+
 
 
 
