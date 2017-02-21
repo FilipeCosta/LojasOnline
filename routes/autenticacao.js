@@ -4,17 +4,45 @@ var Loja = require('../models/lojas');
 var Produto = require('../models/produtos');
 var fs = require('fs');
 var multer = require('multer');
-var upload = multer({dest:'./public/upload'});
+var upload = multer({ dest: './public/upload' });
 var session = require('express-session');
 var multipart = require('connect-multiparty');
 var multipartMiddleware = multipart();
+var crypto = require('crypto');
 
 
+var upload = multer({
+  storage: multer.diskStorage({
+
+    destination: function (req, file, cb) {
+      cb(null, './public/upload');
+    },
+
+    filename: function (req, file, cb) {
+      var ext = require('path').extname(file.originalname);
+      ext = ext.length > 1 ? ext : "." + require('mime').extension(file.mimetype);
+      require('crypto').pseudoRandomBytes(16, function (err, raw) {
+        cb(null, (err ? undefined : raw.toString('hex')) + ext);
+      });
+    }
+  })
+});
 
 
-
-
-router.post('/registo',upload.single('file'), function (req, res) {
+/**
+ * @api{post} '/registo
+ * @apiName RegistaLoja
+ * @apiGroup RegistaLoja
+ * @apiDescription
+ * Efetua um Registo de  uma loja/cria 
+ * 
+ * 
+ * 
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 Ok
+ *     
+ */
+router.post('/registo', upload.single('file'), function (req, res) {
 
 
   if (JSON.stringify(req.body) == "{}") {
@@ -29,7 +57,7 @@ router.post('/registo',upload.single('file'), function (req, res) {
   if (!req.body.nome) {
     return res.status(400).json({ Error: "you need to specify the name" });
   }
-  
+
 
   /*Loja.find({nome: req.body.nome},function(err,loja){
     if(err){
@@ -50,14 +78,17 @@ router.post('/registo',upload.single('file'), function (req, res) {
   });*/
 
 
-  // saving image
-  var pic = {
-    name: req.file.name,
-    img:  req.file.path,
-    contentType: req.file.type
-  };
+  if (req.file) {
+    var pic = {
+      name: req.file.originalname,
+      img: req.file.path,
+      contentType: req.file.mimetype
+    };
+  }
+  else {
+    pic = {};
+  }
 
-  console.log(pic);
 
   var loja = new Loja({
     nome: req.body.nome,
@@ -75,6 +106,20 @@ router.post('/registo',upload.single('file'), function (req, res) {
 
 });
 
+
+/**
+ * @api{post} '/login
+ * @apiName EfetuaLogin
+ * @apiGroup EfetuaLogin
+ * @apiDescription
+ * Entra na conta que foi criada antecipadamente
+ * 
+ * 
+ * 
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 Ok
+ *     
+ */
 router.post('/login', function (req, res) {
   if (JSON.stringify(req.body) == "{}") {
     return res.status(400).json({ message: "corpo vazio" });
@@ -92,9 +137,9 @@ router.post('/login', function (req, res) {
     if (!loja) {
       return res.status(404).json({ message: "login invalido verifique as suas credenciais" });
     }
-    if (loja.password != req.body.password) {
-      return res.status(400).json({ message: "password invalida" });
-    }
+    loja.comparePassword(req.body.password, function (err, isMatch) {
+      if (err) return res.status(400).json({ message: "password invalida" });;
+    });
     if (err) {
       return res.status(500);
     }
@@ -104,36 +149,26 @@ router.post('/login', function (req, res) {
   });
 });
 
-router.get('/confirm-login',function(req,res){
-  if ( req.session && req.session.loja ) {
+
+/**
+ * @api{post} '/confirm-login
+ * @apiName ConfirmaLogin
+ * @apiGroup ConfirmaLogin
+ * @apiDescription
+ * Confirma se a loja esta autenticada no servico
+ * 
+ * 
+ * 
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 Ok
+ *     
+ */
+router.get('/confirm-login', function (req, res) {
+  if (req.session && req.session.loja) {
     res.send(req.session.loja);
   } else {
-    res.status(401).send({ status: 'Unauthorized'});
+    res.status(401).send({ status: 'Unauthorized' });
   }
-});
-
-router.post('/upload', multipartMiddleware, function (req, res) {
-  console.log("sadasdsa");
-  flow.post(req, function (status, filename, original_filename, identifier) {
-    console.log('POST', status, original_filename, identifier);
-
-    res.send(200, {
-      // NOTE: Uncomment this funciton to enable cross-domain request.
-      //'Access-Control-Allow-Origin': '*'
-    });
-  });
-});
-
-
-router.get('/upload', function(req, res){
-  flow.get(req, function(status, filename, original_filename, identifier){
-    console.log('GET', status);
-    res.send(200, (status == 'found' ? 200 : 404));
-  });
-});
-
-router.get('/profile', function (req, res) {
-
 });
 
 
